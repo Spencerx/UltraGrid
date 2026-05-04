@@ -273,13 +273,59 @@ static void perform_bob(struct state_df *s, struct video_frame *in, struct video
         }
 }
 
-/// copied from vc_deinterlace_ex
-///
-/// consider merging with vc_deinterlace_ex but perhaps not needed (that func
-/// has slightly different structure - always averages 2 adjacent lines and
-/// writes the result twice to those. This version also uses GCC generic
-/// vectorization support instead of SSE (performs fast if vector_size==16)
-static bool avg_lines(codec_t codec, size_t linesize, char *src1, char *src2, char *dst)
+/**
+ * This version relies on compiler auto-vectorization instead of using SSE
+ * directly (performed fast if VECTOR_SIZE==16 in previous version with GCC
+ * Vector Extensions and the current version produces very similar code).
+ */
+static void
+avg_lines_per_elem(int bpp, size_t linesize, const uint8_t *restrict src1,
+                   const uint8_t *restrict src2, uint8_t *restrict dst)
+{
+        enum { VECTOR_SIZE = 16 };
+        size_t x = 0;
+        if (bpp == DEPTH8) {
+                for (; x < linesize; x += VECTOR_SIZE) {
+                        for (unsigned i = 0; i < VECTOR_SIZE; i++) {
+                                uint8_t c1  = *src1++;
+                                uint8_t c2  = *src2++;
+                                uint8_t res = ((c1 / 2) + (c2 / 2) +
+                                               (c1 % 2 + c1 % 2) / 2);
+                                *dst++      = res;
+                        }
+                }
+                for (; x < linesize; ++x) {
+                        *dst++ = (*src1++ + *src2++ + 1) >> 1;
+                }
+        } else {
+                const uint16_t *s16_1 = (const void *) src1;
+                const uint16_t *s16_2 = (const void *) src2;
+                uint16_t       *d16   = (void *) dst;
+                for (; x < linesize; x += VECTOR_SIZE) {
+                        for (unsigned i = 0; i < VECTOR_SIZE / sizeof *d16; i++) {
+                                uint16_t sh1 = *s16_1++;
+                                uint16_t sh2 = *s16_2++;
+                                uint16_t res = ((sh1 / 2) + (sh2 / 2) +
+                                                (sh1 % 2 + sh1 % 2) / 2);
+                                *d16++       = res;
+                        }
+                }
+                for (; x < linesize / 2; ++x) {
+                        *d16++ = (*s16_1++ + *s16_2++ + 1) >> 1;
+                }
+        }
+}
+
+/**
+ * copied from vc_deinterlace_ex
+ *
+ * consider merging with vc_deinterlace_ex but perhaps not needed (that func
+ * has slightly different structure - always averages 2 adjacent lines and
+ * writes the result twice to those.
+ */
+static bool
+avg_lines(codec_t codec, size_t linesize, char *restrict src1,
+          char *restrict src2, char *restrict dst)
 {
         char *s1 = (char *) src1;
         char *s2 = (char *) src2;
@@ -289,45 +335,8 @@ static bool avg_lines(codec_t codec, size_t linesize, char *src1, char *src2, ch
         }
         int bpp = get_bits_per_component(codec);
         if (bpp == 8 || bpp == 16) {
-                size_t x = 0;
-                if (bpp == 8) {
-                        typedef unsigned char v16uc __attribute__ ((vector_size (16)));
-                        for ( ; x < linesize / 16; ++x) {
-                                v16uc i1, i2;
-                                memcpy(&i1, s1, sizeof i1);
-                                memcpy(&i2, s2, sizeof i2);
-                                v16uc res = ((i1 / 2) + (i2 / 2) + (i1 % 2 + i1 % 2) / 2);
-                                memcpy(d, &res, sizeof res);
-                                s1 += 16;
-                                s2 += 16;
-                                d += 16;
-                        }
-                } else {
-                        typedef unsigned short v16us __attribute__ ((vector_size (16)));
-                        for ( ; x < linesize / 16; ++x) {
-                                v16us i1, i2;
-                                memcpy(&i1, s1, sizeof i1);
-                                memcpy(&i2, s2, sizeof i2);
-                                v16us res = ((i1 / 2) + (i2 / 2) + (i1 % 2 + i1 % 2) / 2);
-                                memcpy(d, &res, sizeof res);
-                                s1 += 16;
-                                s2 += 16;
-                                d += 16;
-                        }
-                }
-                x *= 16;
-                if (bpp  == 8) {
-                        for ( ; x < linesize; ++x) {
-                                *d++ = (*s1++ + *s2++ + 1) >> 1;
-                        }
-                } else {
-                        uint16_t *d16 = (uint16_t *)(void *) d;
-                        uint16_t *s16_1 = (uint16_t *)(void *) s1;
-                        uint16_t *s16_2 = (uint16_t *)(void *) s2;
-                        for ( ; x < linesize / 2; ++x) {
-                                *d16++ = (*s16_1++ + *s16_2++ + 1) >> 1;
-                        }
-                }
+                avg_lines_per_elem(bpp, linesize, (const uint8_t *) src1,
+                                   (const uint8_t *) src2, (uint8_t *) dst);
         } else if (codec == v210) {
                 uint32_t *s32_1 = (uint32_t *)(void *) s1;
                 uint32_t *s32_2 = (uint32_t *)(void *) s2;
