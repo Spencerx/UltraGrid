@@ -3,7 +3,7 @@
  * @author Martin Pulec     <pulec@cesnet.cz>
  */
 /*
- * Copyright (c) 2011-2024 CESNET
+ * Copyright (c) 2011-2026 CESNET, zájmové sdružení právnických osob
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,7 @@
 #include <stdlib.h>           // for free, malloc
 #include <string.h>           // for strchr, strcmp, strdup, strtok_r
 
+#include "compat/c23.h"       // IWYU pragma: keep
 #include "debug.h"            // for log_msg, LOG_LEVEL_ERROR
 #include "lib_common.h"       // for library_class, list_modules, load_library
 #include "utils/color_out.h"  // for color_printf, TERM_BOLD, TERM_RESET
@@ -88,7 +89,9 @@ void show_vo_postprocess_help(bool full)
         list_modules(LIBRARY_CLASS_VIDEO_POSTPROCESS, VO_PP_ABI_VERSION, full);
 }
 
-static _Bool init(struct vo_postprocess_state *s, const char *config_string) {
+static bool
+init(struct vo_postprocess_state *s, const char *config_string)
+{
         char *cpy = strdup(config_string);
         char *tmp = cpy;
         char *save_ptr = NULL;
@@ -105,24 +108,29 @@ static _Bool init(struct vo_postprocess_state *s, const char *config_string) {
                 if (!funcs) {
                         log_msg(LOG_LEVEL_ERROR, MOD_NAME "Unknown postprocess module: %s\n", lib_name);
                         free(cpy);
-                        return 0;
+                        return false;
                 }
                 struct vo_postprocess_state_single *state = malloc(sizeof(struct vo_postprocess_state_single));
                 state->magic = MAGIC_SINGLE;
                 state->funcs = funcs;
                 state->state = state->funcs->init(vo_postprocess_options);
-                if (!state->state) {
-                        log_msg(LOG_LEVEL_ERROR, MOD_NAME "Postprocessing initialization failed: %s\n", config_string);
+                if (state->state == nullptr || state->state == INIT_NOERR) {
+                        if (state->state == nullptr) {
+                                MSG(ERROR,
+                                    "Postprocessing initialization failed: "
+                                    "%s\n",
+                                    config_string);
+                        }
                         free(cpy);
                         free(state);
-                        return 0;
+                        return false;
                 }
                 simple_linked_list_append(s->postprocessors, state);
 
                 tmp = NULL;
         }
         free(cpy);
-        return 1;
+        return true;
 }
 
 struct vo_postprocess_state *vo_postprocess_init(const char *config_string)
