@@ -328,6 +328,10 @@ int wav_seek(FILE *wav_file, long offset, int whence, struct wav_metadata *metad
                 errno = ESPIPE;
                 return -1;
         }
-        return fseek(wav_file, metadata->data_offset + offset, SEEK_SET);
+        int ret = fseek(wav_file, metadata->data_offset + offset, SEEK_SET);
+        if (ret != 0) {
+                perror(__func__);
+        }
+        return ret;
 }
 

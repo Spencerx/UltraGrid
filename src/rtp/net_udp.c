@@ -986,6 +986,10 @@ check_already_bound_rx_socket(socket_udp *s, uint16_t rx_port)
                 return;
         }
         fd_t sock = socket(s->sock.ss_family, SOCK_DGRAM, 0);
+        if (sock == INVALID_SOCKET) {
+                socket_error("%s: Unable to initialize socket", __func__);
+                return;
+        }
         struct sockaddr_storage s_in;
         socklen_t               sin_len =
             set_rx_sockaddr(&s_in, rx_port, s->local->mode == IPv6);
