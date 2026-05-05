@@ -104,7 +104,7 @@ m4_defun([MY_CHECK_FRAMEWORK],
 AC_MSG_CHECKING([GIT presence])
 if which git
 then
-        AC_MSG_CHECKING([checking GIT branch ])
+        AC_MSG_CHECKING([GIT branch])
         git_branch=$(srcdir=$(dirname "$0"); cd "$srcdir"; git name-rev --name-only HEAD)
         if test "$git_branch"; then
                 AC_DEFINE_UNQUOTED([GIT_BRANCH], "$git_branch", [Current GIT branch])
@@ -112,7 +112,7 @@ then
         else
                 AC_MSG_RESULT(no);
         fi
-        AC_MSG_CHECKING([checking GIT revision ])
+        AC_MSG_CHECKING([GIT revision])
         git_rev=$(srcdir=$(dirname "$0"); cd "$srcdir"; git rev-parse --short HEAD)
         if test "$git_rev"; then
                 AC_DEFINE_UNQUOTED([GIT_REV], "$git_rev", [Current GIT revision])
@@ -266,6 +266,51 @@ $TARGET: $2
 "
         fi
 }
+
+# --------------------------------------------------------------------------
+# C23 support
+#
+# c23 support checked and flags added if needed to support as much of c23
+# as possible - therefore 202000L (instead of 202311L) is intentional -
+# older compilers like Clang 15 use this placeholder for -std=c23 (or
+# gnu2x as tried below).
+#
+# TODO: TOREMOVE when not needed - autoconf since 2.73 checks c23 and adds
+# needed flags in AC_PROG_CC automatically:
+# <https://lists.gnu.org/archive/html/autotools-announce/2026-03/msg00000.html>.
+# --------------------------------------------------------------------------
+
+m4_if(m4_version_compare(m4_defn([AC_AUTOCONF_VERSION]), [2.73]), [-1],
+[
+        AC_MSG_NOTICE([Autoconf < 2.73 - checking additional flags for C23])
+        AC_MSG_CHECKING([additional flags for C23])
+
+        c23_program=$(cat<<-'EOF'
+		#if __STDC_VERSION__ < 202000L
+		#error "not c23"
+		#endif
+		EOF
+	)
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
+                           [[ ${c23_program?} ]])],
+        c23_wo_flags=yes, c23_wo_flags=)
+
+        if test "${c23_wo_flags?}"; then
+                AC_MSG_RESULT([none needed]);
+        else
+                c23_fl=-std=gnu2x
+                CFLAGS="${CFLAGS:+$CFLAGS }$c23_fl"
+                AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
+                                   [[ ${c23_program?} ]])],
+                c23_w_flags=yes, c23_w_flags=)
+                if test "${c23_w_flags?}"; then
+                        AC_MSG_RESULT([${c23_fl?}]);
+                else
+                        AC_MSG_ERROR([not found]);
+                fi
+        fi
+],
+[ ])
 
 # ---------------------------------------------------------------------
 # Dylib bundler
