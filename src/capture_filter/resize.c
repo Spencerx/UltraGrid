@@ -6,7 +6,7 @@
  */
 /*
  * Copyright (c) 2014      Fundació i2CAT, Internet I Innovació Digital a Catalunya
- * Copyright (c) 2014-2023 CESNET, z. s. p. o.
+ * Copyright (c) 2014-2026 CESNET, zájmové sdružení právnických osob
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, is permitted provided that the following conditions
@@ -51,6 +51,7 @@
 
 #include "capture_filter.h"
 #include "capture_filter/resize_utils.h"
+#include "compat/c23.h"                  // IWYU pragma: keep
 #include "debug.h"
 #include "lib_common.h"
 #include "utils/color_out.h"
@@ -230,6 +231,9 @@ reconfigure_if_needed(struct state_resize *s, const struct video_frame *in)
 
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
+    if (in == nullptr) {
+        return nullptr;
+    }
     struct state_resize *s = state;
 
     if (!reconfigure_if_needed(s, in)) {

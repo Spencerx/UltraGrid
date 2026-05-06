@@ -3,7 +3,7 @@
  * @author Martin Pulec <martin.pulec@cesnet.cz>
  */
 /*
- * Copyright (c) 2025 CESNET, zájmové sdružení právnických osob
+ * Copyright (c) 2025-2026 CESNET, zájmové sdružení právnických osob
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@
 #include <string.h> // for memcpy, strchr, strcmp, strdup, strtok_r
 
 #include "capture_filter.h"  // for CAPTURE_FILTER_ABI_VERSION, capture_fil...
+#include "compat/c23.h"      // IWYU pragma: keep
 #include "debug.h"           // for LOG_LEVEL_ERROR, MSG
 #include "lib_common.h"      // for REGISTER_MODULE, library_class
 #include "types.h"           // for tile, video_frame, video_frame_callbacks
@@ -138,6 +139,9 @@ done(void *state)
 static struct video_frame *
 filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct state_noise *s = state;
 
         struct video_frame *out = vf_alloc_desc_data(video_desc_from_frame(in));

@@ -3,7 +3,7 @@
  * @author Martin Pulec     <pulec@cesnet.cz>
  */
 /*
- * Copyright (c) 2015-2025 CESNET
+ * Copyright (c) 2015-2026 CESNET, zájmové sdružení právnických osob
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,7 @@
 #include <string.h>              // for memset, strtok_r, memcpy, strchr
 
 #include "capture_filter.h"
+#include "compat/c23.h"          // IWYU pragma: keep
 #include "debug.h"
 #include "lib_common.h"
 #include "utils/color_out.h"
@@ -76,6 +77,9 @@ static void done(void *state)
 
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct state_flip *s = state;
         struct video_frame *out = vf_alloc_desc(video_desc_from_frame(in));
         if (s->vo_pp_out_buffer) {

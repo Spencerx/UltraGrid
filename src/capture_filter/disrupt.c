@@ -108,6 +108,9 @@ static void done(void *state)
 
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct state_disrupt *s = state;
 
         nanosleep(&(struct timespec){ .tv_nsec =

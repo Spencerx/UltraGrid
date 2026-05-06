@@ -3,7 +3,7 @@
  * @author Martin Pulec <pulec@cesnet.cz>
  */
 /*
- * Copyright (c) 2022-2025 CESNET
+ * Copyright (c) 2022-2026 CESNET, zájmové sdružení právnických osob
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,7 @@
 #include <string.h>           // for strchr, strcmp, strlen, strdupa
 
 #include "capture_filter.h"
+#include "compat/c23.h"       // IWYU pragma: keep
 #include "compat/strings.h"      // strdupa
 #include "debug.h"
 #include "host.h"             // for exit_uv
@@ -186,6 +187,9 @@ static int init(struct module *parent, const char *cfg, void **state)
 
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct capture_filter_display *s = state;
         struct video_frame *f = in ? vf_get_copy(in) : NULL;
         pthread_mutex_lock(&s->lock);

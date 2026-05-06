@@ -46,6 +46,7 @@
 #include "video_frame.h"         // for video_desc_from_frame, video_desc_eq
 
 #include "capture_filter.h"
+#include "compat/c23.h"          // IWYU pragma: keep
 #include "lib_common.h"
 #include "libavcodec/utils.h"
 #include "messaging.h"
@@ -196,6 +197,9 @@ static struct response * process_message(struct state_blank *s, struct msg_unive
  */
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         assert(in->tile_count == 1);
 
         struct state_blank *s = state;

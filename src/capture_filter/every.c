@@ -3,7 +3,7 @@
  * @author Martin Pulec     <pulec@cesnet.cz>
  */
 /*
- * Copyright (c) 2013-2025 CESNET
+ * Copyright (c) 2013-2026 CESNET, zájmové sdružení právnických osob
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,7 @@
 #include "capture_filter.h"
 
 #include "debug.h"
+#include "compat/c23.h"       // IWYU pragma: keep
 #include "lib_common.h"
 #include "types.h"            // for video_frame, video_frame_callbacks, tile
 #include "utils/color_out.h"
@@ -115,6 +116,9 @@ static void dispose_frame(struct video_frame *f) {
 
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct state_every *s = state;
 
         if (s->num == 0) {

@@ -3,7 +3,7 @@
  * @author Martin Pulec     <pulec@cesnet.cz>
  */
 /*
- * Copyright (c) 2020-2025 CESNET
+ * Copyright (c) 2020-2026 CESNET, zájmové sdružení právnických osob
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -195,6 +195,9 @@ static void done(void *state)
 
 static auto filter(void *state, struct video_frame *in) -> video_frame *
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         if (in->color_spec != RGB && in->color_spec != RG48) {
                 LOG(LOG_LEVEL_ERROR) << MOD_NAME << "Unable to apply lut on: " << get_codec_name(in->color_spec) << "\n";
                 VIDEO_FRAME_DISPOSE(in);

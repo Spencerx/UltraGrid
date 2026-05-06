@@ -42,6 +42,7 @@
 #include <string.h>                                 // for memcpy, strcmp
 
 #include "capture_filter.h"                         // for CAPTURE_FILTER_AB...
+#include "compat/c23.h"                             // IWYU pragma: keep
 #include "debug.h"                                  // for log_msg, LOG_LEVE...
 #include "lib_common.h"                             // for REGISTER_MODULE
 #include "pixfmt_conv.h"                            // for get_decoder_from_to
@@ -98,6 +99,9 @@ static void done(void *state)
 
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct state_capture_filter_change_pixfmt *s = state;
         struct video_desc desc = video_desc_from_frame(in);
         desc.color_spec = s->to_codec;

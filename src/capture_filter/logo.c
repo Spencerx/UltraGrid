@@ -43,6 +43,7 @@
 #include <string.h>          // for strcasecmp, strlen, strtok_r, strdup
 
 #include "capture_filter.h"
+#include "compat/c23.h"      // IWYU pragma: keep
 #include "debug.h"
 #include "lib_common.h"
 #include "pixfmt_conv.h"     // for get_decoder_from_to, decoder_t, vc_copyl...
@@ -160,8 +161,10 @@ static void done(void *state)
 
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
-        struct state_capture_filter_logo *s = (struct state_capture_filter_logo *)
-                state;
+        if (in == nullptr) {
+                return nullptr;
+        }
+        struct state_capture_filter_logo *s = state;
         decoder_t decoder, coder;
         decoder = get_decoder_from_to(in->color_spec, RGB);
         if (decoder == NULL) {

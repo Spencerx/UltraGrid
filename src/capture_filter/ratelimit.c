@@ -40,6 +40,7 @@
 #include <string.h>           // for memcpy, strcasecmp, strlen
 
 #include "capture_filter.h"
+#include "compat/c23.h"       // IWYU pragma: keep
 #include "debug.h"
 #include "lib_common.h"
 #include "tv.h"
@@ -93,6 +94,9 @@ static void dispose_frame(struct video_frame *f) {
 
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct state_ratelimit *s = state;
 
         time_ns_t t = get_time_in_ns();

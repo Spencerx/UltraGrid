@@ -3,7 +3,7 @@
  * @author Martin Piatka    <piatka@cesnet.cz>
  */
 /*
- * Copyright (c) 2022-2025 CESNET
+ * Copyright (c) 2022-2026 CESNET, zájmové sdružení právnických osob
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -214,6 +214,9 @@ static void done(void *state){
 }
 
 static struct video_frame *filter(void *state, struct video_frame *in){
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct state_preview_filter *s = (state_preview_filter *) state;
 
         auto now = clk::now();

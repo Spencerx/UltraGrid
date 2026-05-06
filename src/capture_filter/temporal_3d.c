@@ -42,6 +42,7 @@
 #include <string.h>           // for memcpy, strcasecmp, strlen
 
 #include "capture_filter.h"   // for CAPTURE_FILTER_ABI_VERSION, capture_fil...
+#include "compat/c23.h"       // IWYU pragma: keep
 #include "lib_common.h"       // for REGISTER_MODULE, library_class
 #include "types.h"            // for tile, video_frame, video_frame_callbacks
 #include "utils/color_out.h"  // for color_printf, TBOLD
@@ -103,6 +104,9 @@ static void done(void *state)
 
 static struct video_frame *filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct state_temporal_3d *s = state;
         assert(s->magic == MAGIC);
 

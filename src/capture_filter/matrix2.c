@@ -3,7 +3,7 @@
  * @author Martin Pulec     <pulec@cesnet.cz>
  */
 /*
- * Copyright (c) 2024 CESNET
+ * Copyright (c) 2024-2026 CESNET, zájmové sdružení právnických osob
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,7 @@
 #include <string.h>                                 // for strcmp, memcpy
 
 #include "capture_filter.h"                         // for CAPTURE_FILTER_AB...
+#include "compat/c23.h"                             // IWYU pragma: keep
 #include "debug.h"                                  // for LOG_LEVEL_ERROR, MSG
 #include "lib_common.h"                             // for REGISTER_MODULE
 #include "pixfmt_conv.h"                            // for get_decoder_from_to
@@ -244,6 +245,9 @@ convert_apply_y416(struct state_capture_filter_matrix2 *s,
 static struct video_frame *
 filter(void *state, struct video_frame *in)
 {
+        if (in == nullptr) {
+                return nullptr;
+        }
         struct state_capture_filter_matrix2 *s = state;
         struct video_desc desc = video_desc_from_frame(in);
         struct video_frame *out = vf_alloc_desc(desc);
