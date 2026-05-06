@@ -122,9 +122,12 @@ vidcap_screen_avf_init(const struct vidcap_params *params, void **state)
         char *new_fmt = nullptr;
         asprintf(&new_fmt, "%s%sd=%u", fmt, strlen(fmt) == 0 ? "" : ":",
                  AVF_SCR_CAP_OFF);
-        vidcap_params_replace_fmt(params, new_fmt);
+        struct vidcap_params *params_copy = vidcap_params_copy(params);
+        vidcap_params_replace_fmt(params_copy, new_fmt);
+        int ret = vidcap_avfoundation_info.init(params, state);
         free(new_fmt);
-        return vidcap_avfoundation_info.init(params, state);
+        vidcap_params_free(params_copy);
+        return ret;
 }
 
 static void
