@@ -28,6 +28,7 @@ struct capture_filter_vo_pp_wrapper {
         struct video_desc saved_desc;
         struct video_desc out_desc;
         int               out_frames_count;
+        int               out_frame_idx; ///< less than out_frames_count
         void             *state; ///< vo pp state
 };
 
@@ -54,13 +55,22 @@ struct capture_filter_vo_pp_wrapper {
             void *state, struct video_frame *in)                               \
         {                                                                      \
                 struct capture_filter_vo_pp_wrapper *s = state;                \
-                struct video_desc in_desc = video_desc_from_frame(in);         \
-                if (!video_desc_eq(in_desc, s->saved_desc)) {                  \
-                        reconfigure(s->state, in_desc);                        \
-                        int display_mode_unused = 0;                           \
-                        get_out_desc(s->state, &s->out_desc,                   \
-                                     &display_mode_unused,                     \
-                                     &s->out_frames_count);                    \
+                if (in == nullptr &&                                           \
+                    s->out_frame_idx >= s->out_frames_count - 1) {             \
+                        return nullptr;                                        \
+                }                                                              \
+                if (in != nullptr) {                                           \
+                        struct video_desc in_desc = video_desc_from_frame(in); \
+                        if (!video_desc_eq(in_desc, s->saved_desc)) {          \
+                                reconfigure(s->state, in_desc);                \
+                                int display_mode_unused = 0;                   \
+                                get_out_desc(s->state, &s->out_desc,           \
+                                             &display_mode_unused,             \
+                                             &s->out_frames_count);            \
+                        }                                                      \
+                        s->out_frame_idx = 0;                                  \
+                } else {                                                       \
+                        s->out_frame_idx += 1;                                 \
                 }                                                              \
                 struct video_frame *f = vf_alloc_desc_data(s->out_desc);       \
                 f->callbacks.dispose  = vf_free;                               \

@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "capture_filter/vo_pp_wrapper.h" // for ADD_CAPTURE_FILTER_VO_PP_W...
 #include "compat/net.h"
 #include "debug.h"
 #include "lib_common.h"
@@ -214,9 +215,23 @@ static struct video_frame * common_getf(void *state)
         return s->in;
 }
 
+/// capture filter -> will need to copy data ton int buffer (NOOP for vo_pp)
+static void
+copy_data_to_int_buf_if_cf(struct state_df *s, struct video_frame *in)
+{
+        if (in == nullptr || in == s->in) {
+                return;
+        }
+        struct video_frame *int_buf = common_getf(s);
+        memcpy(int_buf->tiles[0].data, in->tiles[0].data,
+               in->tiles[0].data_len);
+}
+
 /// @todo perhaps suboptimal
 static void perform_df(struct state_df *s, struct video_frame *in, struct video_frame *out, int req_pitch)
 {
+        copy_data_to_int_buf_if_cf(s, in);
+
         if(in != NULL) {
                 char *src = s->buffers[(s->buffer_current + 1) % 2] + vc_get_linesize(s->in->tiles[0].width, s->in->color_spec);
                 char *dst = out->tiles[0].data + req_pitch;
@@ -254,6 +269,8 @@ static void perform_df(struct state_df *s, struct video_frame *in, struct video_
 
 static void perform_bob(struct state_df *s, struct video_frame *in, struct video_frame *out, int pitch)
 {
+        copy_data_to_int_buf_if_cf(s, in);
+
         int linesize = vc_get_linesize(s->in->tiles[0].width, s->in->color_spec);
         char *dst = out->tiles[0].data;
         char *src = s->buffers[s->buffer_current] + (in ? 0 : linesize);
@@ -415,6 +432,8 @@ avg_lines(codec_t codec, size_t linesize, char *restrict src1,
 
 static void perform_linear(struct state_df *s, struct video_frame *in, struct video_frame *out, int pitch)
 {
+        copy_data_to_int_buf_if_cf(s, in);
+
         int linesize = vc_get_linesize(s->in->tiles[0].width, s->in->color_spec);
         char *src = s->buffers[s->buffer_current] + (in ? 0 : linesize);
         char *dst = out->tiles[0].data;
@@ -533,6 +552,17 @@ static const struct vo_postprocess_info vo_pp_linear_info = {
 };
 
 REGISTER_MODULE(double_framerate, &vo_pp_df_info, LIBRARY_CLASS_VIDEO_POSTPROCESS, VO_PP_ABI_VERSION);
+ADD_CAPTURE_FILTER_VO_PP_WRAPPER(double_framerate, df_init,
+                                 common_postprocess_reconfigure,
+                                 common_get_out_desc, common_postprocess,
+                                 common_done);
 REGISTER_MODULE(deinterlace_bob, &vo_pp_bob_info, LIBRARY_CLASS_VIDEO_POSTPROCESS, VO_PP_ABI_VERSION);
+ADD_CAPTURE_FILTER_VO_PP_WRAPPER(deinterlace_bob, bob_init,
+                                 common_postprocess_reconfigure,
+                                 common_get_out_desc, common_postprocess,
+                                 common_done);
 REGISTER_MODULE(deinterlace_linear, &vo_pp_linear_info, LIBRARY_CLASS_VIDEO_POSTPROCESS, VO_PP_ABI_VERSION);
-
+ADD_CAPTURE_FILTER_VO_PP_WRAPPER(deinterlace_linear, linear_init,
+                                 common_postprocess_reconfigure,
+                                 common_get_out_desc, common_postprocess,
+                                 common_done);

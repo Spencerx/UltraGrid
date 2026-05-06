@@ -59,6 +59,7 @@
 #include <stdlib.h>                // for NULL, free, malloc, size_t
 
 #include "capture_filter.h"
+#include "compat/c23.h" // IWYU pragma: keep
 #include "debug.h"
 #include "lib_common.h"
 #include "module.h"
@@ -222,10 +223,18 @@ void vidcap_done(struct vidcap *state)
 struct video_frame *vidcap_grab(struct vidcap *state, struct audio_frame **audio)
 {
         assert(state->magic == VIDCAP_MAGIC);
-        struct video_frame *frame;
+
+        // grab additional capture filter frames if created more
+        struct video_frame *frame =
+            capture_filter(state->capture_filter, nullptr);
+        if (frame != nullptr) {
+                return frame;
+        }
+
         frame = state->funcs->grab(state->state, audio);
-        if (frame != NULL)
+        if (frame != nullptr) {
                 frame = capture_filter(state->capture_filter, frame);
+        }
         return frame;
 }
 

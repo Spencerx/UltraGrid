@@ -3,7 +3,7 @@
  * @author Martin Pulec     <martin.pulec@cesnet.cz>
  */
 /*
- * Copyright (c) 2013-2023 CESNET, z. s. p. o.
+ * Copyright (c) 2013-2026 CESNET, zájmové sdružení právnických osob
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,13 +38,20 @@
 #ifndef CAPTURE_FILTER_H_
 #define CAPTURE_FILTER_H_
 
-#define CAPTURE_FILTER_ABI_VERSION 3
+#define CAPTURE_FILTER_ABI_VERSION 4
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct module;
+
+/**
+ * @param f  can be nullptr, in which case return either nullptr or a subsequent
+ *           frame produced from previous non-null frame
+ */
+typedef struct video_frame *capture_filter_filter_fn(void               *state,
+                                                     struct video_frame *f);
 
 struct capture_filter_info {
         /// @brief Initializes capture filter
@@ -66,7 +73,7 @@ struct capture_filter_info {
         /// member to manage video_frame lifetime.
         /// This behavior may change towards use of shared_ptr<video_frame>
         /// in future.
-        struct video_frame *(*filter)(void *state, struct video_frame *f);
+        capture_filter_filter_fn *filter;
 };
 
 struct capture_filter;
