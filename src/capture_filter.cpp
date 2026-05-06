@@ -221,8 +221,6 @@ struct video_frame *capture_filter(struct capture_filter *state, struct video_fr
            ) {
                 struct capture_filter_instance *inst = (struct capture_filter_instance *) simple_linked_list_it_next(&it);
                 frame = inst->functions->filter(inst->state, frame);
-                if(!frame)
-                        return NULL;
         }
         return frame;
 }
