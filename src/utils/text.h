@@ -53,6 +53,7 @@ extern "C" {
 
 unsigned char *base64_decode(const char *in, unsigned int *length);
 char *wrap_paragraph(char *text);
+void color_printf_wrapped(const char *text);
 size_t urlencode(char *out, size_t max_len, const char *in);
 size_t urldecode(char *out, size_t max_len, const char *in);
 

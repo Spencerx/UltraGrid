@@ -39,18 +39,31 @@ struct state_add_frame {
 static void
 usage()
 {
-        char desc[] = "capture filter " TBOLD("add_frame")
-                      " adds 1 extra frame per every amount of "
-                      "frames.\n\nTypical use case is to convert 50p to 60p.\n";
-        color_printf("%s\n", wrap_paragraph(desc));
+        color_printf("capture filter " TBOLD("add_frame")
+                     " adds 1 extra frame per every amount of "
+                     "frames.\n\n");
+
+        color_printf("Typical use case is to convert 50p to 60p.\n\n");
+
         color_printf("Usage:\n"
                      "\t" TBOLD("-F add_frame:every=<num>[:nodelay]")
                      "\n\n");
+
         color_printf(
             "(in the proposed 50p->60p case, the <num> will be 5)\n\n");
-        color_printf(
-            "Example converting 50i->50p (notice `nodelay` for DF):\n\tuv -F "
-            "double_framerate:nodelay,add_frame:e=5 -t testcard:fps=50i\n\n");
+
+        color_printf("Example converting 50i->50p (notice `nodelay` for DF):\n");
+        color_printf("\t " TBOLD(
+            "uv -F double_framerate:nodelay,add_frame:e=5")
+                     " -t testcard:fps=50i\n");
+        color_printf("or simply for 50p->60p:\n");
+        color_printf("\t " TBOLD("uv -F add_frame:e=5")
+                     " -t testcard:fps=50p\n");
+        color_printf("\n");
+
+        color_printf_wrapped(
+            "See also the capture filter " TBOLD("every")
+            " for frame dropping (eg. to achieve 60p->50p conversion).\n\n");
 }
 
 static void

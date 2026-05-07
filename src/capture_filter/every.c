@@ -49,6 +49,8 @@
 #include "utils/color_out.h"
 #include "video_frame.h"      // for VIDEO_FRAME_DISPOSE, vf_alloc_desc, vf_...
 
+#define MOD_NAME "[cf/every] "
+
 struct module;
 
 static int init(struct module *parent, const char *cfg, void **state);
@@ -62,12 +64,26 @@ struct state_every {
 };
 
 static void usage() {
-        color_printf("Passes only every n-th frame.\n"
-                     "See also capture filter " TBOLD("ratelimit") ".\n\n");
+        color_printf("Passes only every n-th frame.\n\n");
+
+        color_printf("See also captures filter:\n");
+        color_printf(
+            "\t" TBOLD("ratelimit")
+            " - limits to given FPS (timing) but without dropping frames\n");
+        color_printf("\t" TBOLD("add_frame")
+                     " - frame stuffing (eg. for 50p->60p conversion)\n\n");
+
         color_printf(TBOLD("every") " usage:\n");
         printf("\tevery:numerator[/denominator]\n\n");
-        printf("Example: every:2 - every second frame will be dropped\n");
-        printf("The special case every:0 can be used to discard all frames\n");
+
+        color_printf("Examples:\n");
+        color_printf("\t" TBOLD("every:2")
+                     " - every second frame will be dropped\n");
+        color_printf("\t" TBOLD("every:0")
+                     "- The special case  can be used to discard all frames\n");
+        color_printf("\t" TBOLD("every:6/5")
+                     " - drops every 6th frame - effectively can be used to "
+                     "convert 60p->50p\n\n");
 }
 
 static int init(struct module *parent, const char *cfg, void **state)
@@ -89,8 +105,8 @@ static int init(struct module *parent, const char *cfg, void **state)
                 denom = atoi(strchr(cfg, '/') + 1);
         }
         if (denom > n && n != 0) {
-                log_msg(LOG_LEVEL_ERROR, "Currently, numerator has to be greater "
-                       "(or equal, which, however, has a little use) than denominator.\n");
+                MSG(ERROR,
+                    "Numerator has to be greater or equal to denominator.\n");
                 return -1;
         }
 

@@ -223,6 +223,13 @@ wrap_paragraph(char *text)
         return text;
 }
 
+void
+color_printf_wrapped(const char *text)
+{
+        char *cpy = strdup(text);
+        color_printf("%s", wrap_paragraph(cpy));
+        free(cpy);
+}
 
 static unsigned char font_data[(FONT_W * FONT_COUNT + 7) / 8 * FONT_H];
 static bool          font_data_initialized = false;
